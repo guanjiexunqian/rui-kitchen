@@ -1,4 +1,4 @@
-const VERSION = "mom-v8-2";
+const VERSION = "mom-v8-3";
 const CORE = ["./index.html", "./theme.css", "./theme.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

@@ -1083,6 +1083,16 @@ function renderFixed(){
 /* ===== 备份 ===== */
 function doExport(){
   const data = JSON.stringify({app:"zhouqun-ledger", version:3, exportedAt:todayKey(), budget, fixedList, items}, null, 2);
+  if(window.AndroidBridge && AndroidBridge.saveFile){
+    try{
+      if(AndroidBridge.saveFile(`周群的账本_${todayKey()}.json`, data, "application/json")){
+        localStorage.setItem(K_BACKUP, todayKey());
+        renderBackupState();
+        toast("账本已保存到手机 Download/周群账本");
+        return;
+      }
+    }catch(e){}
+  }
   const blob = new Blob([data], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -1102,6 +1112,14 @@ function doExportCsv(){
     rows.push([i.date, i.io==="in"?"收入":"支出", i.catName || "", i.note || "", i.amt]);
   });
   const csv = "\uFEFF" + rows.map(row=>row.map(csvCell).join(",")).join("\r\n");
+  if(window.AndroidBridge && AndroidBridge.saveFile){
+    try{
+      if(AndroidBridge.saveFile(`周群的账本_${todayKey()}.csv`, csv, "text/csv")){
+        toast("表格已保存到手机 Download/周群账本");
+        return;
+      }
+    }catch(e){}
+  }
   const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -1124,6 +1142,16 @@ function saveSnapshot(){
   }catch(e){}
 }
 async function shareBackup(){
+  if(window.AndroidBridge && AndroidBridge.shareFile){
+    try{
+      if(AndroidBridge.shareFile(`周群的账本_${todayKey()}.json`, backupPayload(), "application/json")){
+        localStorage.setItem(K_BACKUP, todayKey());
+        renderBackupState();
+        toast("选择微信发给家人或收藏，就很安心");
+        return;
+      }
+    }catch(e){}
+  }
   const blob = new Blob([backupPayload()], {type:"application/json"});
   const file = new File([blob], `周群的账本_${todayKey()}.json`, {type:"application/json"});
   try{
