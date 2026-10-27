@@ -84,6 +84,10 @@
   <div class="grid" id="catGrid"></div>
   <div class="price-hint" id="priceHint"></div>
   <div class="quick-row" id="quickRow"></div>
+  <div class="sentence-box">
+    <input id="sentenceInput" maxlength="40" placeholder="懒人一句记：午饭 32">
+    <button id="sentenceGo" type="button">帮我填</button>
+  </div>
   <div class="frequent" id="frequentBox"></div>
   <div class="kb">
     <div class="kb-disp">
@@ -105,6 +109,7 @@
       <p>不追着数字跑，只看看钱都去了哪里。</p>
     </div>
     <div class="budget-card" id="budgetBox"></div>
+    <div class="week-card" id="weekBox"></div>
     <div class="cal-card" id="calBox"></div>
     <div class="bars" id="barBox"></div>
     <details class="more-stats">
@@ -125,17 +130,63 @@
     <button id="btnGotoData2">备份 / 恢复账本</button>
   </div>
   <div class="fixed-card" id="fixedBox"></div>
+  <div class="ai-card" id="aiCard">
+    <div class="ai-head">
+      <div>
+        <span class="ai-kicker">AI NOTE</span>
+        <h3>AI 账本管家</h3>
+      </div>
+      <span class="ai-badge" id="aiBadge">本地分析</span>
+    </div>
+    <p class="ai-sub">只分析汇总数字，不发原始账目。云端 AI 可选，密钥只存本机。</p>
+    <div class="ai-quick">
+      <button data-ai="spend">这个月花哪了</button>
+      <button data-ai="save">哪里能省</button>
+      <button data-ai="letter">写一句总结</button>
+    </div>
+    <div class="ai-ask">
+      <input id="aiAskInput" maxlength="80" placeholder="问一句，比如：最近哪类花得最多？">
+      <button id="aiAskBtn" type="button">问</button>
+    </div>
+    <div class="ai-result" id="aiResult">点上面的问题，我先用本地账本给你看看。</div>
+    <details class="ai-settings">
+      <summary>设置云端 AI（可选）</summary>
+      <div class="ai-fields">
+        <label>接口地址<input id="aiEndpoint" placeholder="例如 https://api.openai.com/v1"></label>
+        <label>模型名<input id="aiModel" placeholder="例如 gpt-4o-mini"></label>
+        <label>API Key<input id="aiKey" type="password" placeholder="只存这台设备，不写进备份"></label>
+        <label class="ai-toggle"><input id="aiEnabled" type="checkbox"> 启用云端 AI</label>
+        <div class="ai-actions">
+          <button id="aiSave" type="button">保存设置</button>
+          <button id="aiClear" type="button">清除密钥</button>
+        </div>
+        <p>支持 OpenAI 兼容接口，也可填豆包、DeepSeek 等兼容服务。云端只发送本月分类汇总，不发送原始流水。</p>
+      </div>
+    </details>
+  </div>
   <div class="data-card" id="dataBox">
     <h3>账本备份</h3>
     <p class="hint">账目都存在这台手机里。把账本文件发到微信收藏，换手机或清缓存后还能找回来。</p>
     <div class="backup-state" id="backupState">还没有备份过</div>
     <div class="snapshot-state" id="snapshotState">导入前会自动留一份快照</div>
+    <div class="data-own">
+      <span>数据始终在你手里</span>
+      <b>账本不上传 · 云端 AI 可选</b>
+    </div>
+    <div class="bill-help">
+      <b>微信 / 支付宝账单</b>
+      <span>在官方 App 导出 CSV 后，在这里合并进账本；先预览，再确认。</span>
+    </div>
     <div class="data-btns">
       <button class="exp" id="btnExport">分享备份</button>
       <button class="imp" id="btnImport">导入恢复</button>
+      <button class="csv" id="btnCsv">导出表格（Excel 可开）</button>
     </div>
+    <button class="bill" id="btnBillImport" type="button">导入微信 / 支付宝账单</button>
+    <button class="undo" id="btnUndoImport" type="button" disabled>撤销上次账单导入</button>
     <button class="snap" id="btnRestoreSnapshot" type="button" disabled>恢复最近自动快照</button>
     <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+    <input type="file" id="billFile" accept=".csv,.txt,text/csv" style="display:none">
   </div>
 </div>
 </div>
@@ -159,7 +210,23 @@
     </div>
   </div>
 </div>
-
+<div class="mask-bg" id="billMaskBg"></div>
+<div class="bill-sheet" id="billSheet">
+  <div class="sheet-box">
+    <div class="bill-sheet-head">
+      <div>
+        <span class="ai-kicker">BILL IMPORT</span>
+        <h3>账单导入预览</h3>
+      </div>
+      <button id="billCancelX" type="button" aria-label="关闭">×</button>
+    </div>
+    <div id="billPreview"></div>
+    <div class="row">
+      <button class="cancel" id="billCancel">先不导入</button>
+      <button class="ok" id="billConfirm">确认导入</button>
+    </div>
+  </div>
+</div>
 <script src="theme.js"></script>
 <script>
 const CATS = [
@@ -183,6 +250,8 @@ const K_BUDGET = "mom-budget-zhouqun";
 const K_FIXED = "mom-fixed-zhouqun";
 const K_BACKUP = "mom-last-backup-zhouqun";
 const K_SNAPSHOT = "mom-auto-snapshot-zhouqun";
+const K_IMPORT_UNDO = "mom-import-undo-zhouqun";
+const K_AI = "mom-ai-settings-zhouqun";
 const load = k => { try{ return JSON.parse(localStorage.getItem(k)) ?? null; }catch(e){ return null; } };
 let items = load(K) || [];
 let budget = load(K_BUDGET) || 0;
@@ -192,9 +261,11 @@ let fixedList = load(K_FIXED) || [
 ];
 let io = "out", cat = CATS[0], buf = "0", viewY, viewM, curView = "add";
 let altDate = "", keyword = "", filterCat = "全部";
+let pendingBill = null;
 const $ = s => document.getElementById(s);
 const pad = n => String(n).padStart(2,"0");
-const todayKey = () => { const d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+const keyForDate = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayKey = () => keyForDate(new Date());
 const fmt = n => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
 function save(){ try{ localStorage.setItem(K, JSON.stringify(items)); }catch(e){ toast("存储满了，请删几笔旧的"); } }
@@ -242,6 +313,334 @@ function renderQuick(){
   $("quickRow").innerHTML = (cc.quick||[]).map(q => `<button data-q="${q}">${q}</button>`).join("");
   $("quickRow").querySelectorAll("button").forEach(b => b.onclick = () => { $("kbNote").value = b.dataset.q; });
   renderFrequent();
+}
+function parseQuickEntry(text){
+  const raw = String(text || "").trim();
+  if(!raw) return null;
+  const explicit = raw.match(/(?:￥|¥)?\s*(\d+(?:\.\d{1,2})?)\s*(?:元|块(?:钱)?)/);
+  const nums = [...raw.matchAll(/(\d+(?:\.\d{1,2})?)/g)]
+    .map(m => parseFloat(m[1]))
+    .filter(Number.isFinite);
+  const amt = explicit ? parseFloat(explicit[1]) : nums.length ? nums[nums.length - 1] : NaN;
+  let note = raw
+    .replace(/[￥¥]?\s*\d+(?:\.\d{1,2})?\s*(?:元|块(?:钱)?)?/g, "")
+    .replace(/[，,。.!！?？:：]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if(!Number.isFinite(amt) || amt <= 0) return null;
+
+  const incomeRules = [
+    {id:"gongzi", words:["工资","奖金","薪水"]},
+    {id:"jinzhang", words:["进账","报销","退货","收款"]},
+    {id:"licai", words:["利息","分红","理财"]}
+  ];
+  const income = incomeRules.find(r => r.words.some(w => raw.includes(w)));
+  if(income){
+    return {amt, note:note || "进账", io:"in", cat:IN_CATS.find(c=>c.id===income.id) || IN_CATS[0]};
+  }
+
+  const rules = [
+    {id:"maicai", words:["买菜","蔬菜","猪肉","牛腩","排骨","鱼","虾","水果","苹果","香蕉","葡萄","山竹","牛奶","鸡蛋"]},
+    {id:"zaocan", words:["早饭","午饭","晚饭","早餐","午餐","晚餐","吃饭","外卖","奶茶","咖啡","饭"]},
+    {id:"riyong", words:["纸巾","洗衣液","洗洁精","牙膏","日用"]},
+    {id:"yaopin", words:["买药","药","体检","医院","保健"]},
+    {id:"shuidian", words:["电费","水费","燃气","话费","水电"]},
+    {id:"jiaotong", words:["公交","地铁","打车","加油","停车"]},
+    {id:"hongbao", words:["红包","送礼","份子","人情"]}
+  ];
+  const hit = rules.find(r => r.words.some(w => raw.includes(w)));
+  return {amt, note:note || "随手记", io:"out", cat:CATS.find(c=>c.id===(hit&&hit.id)) || CATS[0]};
+}
+function fillSentence(){
+  const r = parseQuickEntry($("sentenceInput").value);
+  if(!r){ toast("写成「午饭 32」这样，我就能帮你填"); return; }
+  io = r.io;
+  cat = r.cat;
+  buf = String(Math.min(r.amt, 99999));
+  $("segInOut").querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.io===io));
+  $("kbDisp").textContent = "￥" + r.amt.toFixed(2);
+  $("kbNote").value = r.note;
+  renderCats(); renderQuick(); renderPriceHint();
+  $("sentenceInput").value = "";
+  $("kbNote").focus();
+  toast(`已填好：${cat.nm} ￥${r.amt.toFixed(2)}，确认后存下`);
+}
+function splitCsvLine(line){
+  const cells = [];
+  let value = "", quoted = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if(ch === '"'){
+      if(quoted && line[i+1] === '"'){ value += '"'; i++; }
+      else quoted = !quoted;
+    }else if(ch === "," && !quoted){
+      cells.push(value); value = "";
+    }else{
+      value += ch;
+    }
+  }
+  cells.push(value);
+  return cells.map(x => x.replace(/^\s+|\s+$/g, ""));
+}
+function parseCsv(text){
+  const raw = String(text || "").replace(/^\uFEFF/, "");
+  const lines = raw.split(/\r?\n/).filter(line => line.trim());
+  let headerAt = -1;
+  let header = [];
+  for(let i=0;i<Math.min(lines.length, 30);i++){
+    const cells = splitCsvLine(lines[i]);
+    const joined = cells.join("");
+    if(cells.length >= 4 && (joined.includes("交易时间") || joined.includes("交易创建时间") || joined.includes("付款时间"))
+      && (joined.includes("金额") || joined.includes("金额(元)"))){
+      headerAt = i; header = cells; break;
+    }
+  }
+  if(headerAt < 0) return null;
+  const find = words => header.findIndex(h => words.some(w => h.includes(w)));
+  const dateCol = find(["交易时间","交易创建时间","付款时间","创建时间"]);
+  const amtCol = find(["金额(元)","金额（元）","金额"]);
+  const dirCol = find(["收/支","收支","资金方向"]);
+  const noteCol = find(["商品","交易对方","交易说明","备注","商户"]);
+  const statusCol = find(["当前状态","交易状态","状态"]);
+  const extIdCol = find(["交易单号","交易订单号","交易号"]);
+  const rows = [];
+  for(let i=headerAt+1;i<lines.length;i++){
+    const cells = splitCsvLine(lines[i]);
+    if(cells.length < 3 || cells.every(x => !x)) continue;
+    const dateMatch = (cells[dateCol] || "").match(/(\d{4})[-\/年](\d{1,2})[-\/月](\d{1,2})/);
+    const amtMatch = (cells[amtCol] || "").replace(/,/g, "").match(/-?\d+(?:\.\d{1,2})?/);
+    if(!dateMatch || !amtMatch) continue;
+    const date = `${dateMatch[1]}-${pad(dateMatch[2])}-${pad(dateMatch[3])}`;
+    const amt = Math.abs(parseFloat(amtMatch[0]));
+    if(!(amt > 0)) continue;
+    const dir = cells[dirCol] || "";
+    const status = cells[statusCol] || "";
+    const extId = (cells[extIdCol] || "").trim();
+    const note = [cells[noteCol], cells[noteCol+1]]
+      .filter(Boolean)
+      .join(" · ")
+      .replace(/[<>]/g, "")
+      .slice(0, 40);
+    const skip = /退款|已关闭|交易关闭|已撤销|失败/.test(status + note)
+      || /不计收支|不计入收支/.test(dir);
+    rows.push({
+      date,
+      amt,
+      io: /收入|转入/.test(dir) ? "in" : "out",
+      note: note || "账单导入",
+      extId: extId && extId !== "/" ? extId : "",
+      skip,
+      raw: cells.join(" | ")
+    });
+  }
+  return rows.length ? rows : null;
+}
+function billCategory(note, io){
+  if(io === "in") return IN_CATS[1];
+  const hit = [
+    {id:"maicai", words:["买菜","蔬菜","水果","超市","盒马","菜场","猪肉","牛肉","鱼","虾","牛奶","鸡蛋","粮油"]},
+    {id:"zaocan", words:["餐","饭","面","粉","奶茶","咖啡","美团","饿了么","外卖","肯德基","麦当劳","便利店"]},
+    {id:"riyong", words:["日用","纸巾","洗衣","清洁","牙膏","超市","便利店","名创"]},
+    {id:"yaopin", words:["药","医院","诊所","体检","保健"]},
+    {id:"shuidian", words:["电费","水费","燃气","话费","中国移动","中国联通","中国电信"]},
+    {id:"jiaotong", words:["公交","地铁","打车","滴滴","加油","停车","铁路","航空"]},
+    {id:"hongbao", words:["红包","转账","礼","人情"]}
+  ].find(rule => rule.words.some(word => note.includes(word)));
+  return CATS.find(c => c.id === (hit && hit.id)) || CATS[7];
+}
+function billFingerprint(row){
+  if(row.extId) return "id|" + row.extId;
+  return [row.date, row.amt.toFixed(2), row.io, row.note.replace(/\s+/g, "")].join("|");
+}
+function existingFingerprints(){
+  const keys = [];
+  items.forEach(i => {
+    if(i.extId) keys.push("id|" + i.extId);
+    else keys.push([i.date, Number(i.amt).toFixed(2), i.io || "out", String(i.note || "").replace(/\s+/g, "")].join("|"));
+  });
+  return new Set(keys);
+}
+function decodeBillBuffer(buffer){
+  const bytes = new Uint8Array(buffer);
+  if(bytes[0] === 0xFF && bytes[1] === 0xFE) return new TextDecoder("utf-16le").decode(bytes.subarray(2));
+  if(bytes[0] === 0xFE && bytes[1] === 0xFF) return new TextDecoder("utf-16be").decode(bytes.subarray(2));
+  try{
+    return new TextDecoder("utf-8", {fatal:true}).decode(bytes).replace(/^\uFEFF/, "");
+  }catch(e){
+    return new TextDecoder("gb18030").decode(bytes);
+  }
+}
+function prepareBillImport(file){
+  const rd = new FileReader();
+  rd.onload = () => {
+    const rows = parseCsv(decodeBillBuffer(rd.result));
+    if(!rows){ toast("没认出账单表头，请选微信或支付宝导出的 CSV"); return; }
+    const seen = existingFingerprints();
+    const valid = rows.filter(r => !r.skip);
+    const unique = [];
+    const skipped = rows.length - valid.length;
+    let duplicate = 0;
+    valid.forEach(row => {
+      const fp = billFingerprint(row);
+      if(seen.has(fp)) duplicate++;
+      else { seen.add(fp); unique.push({...row, fp}); }
+    });
+    pendingBill = {rows: unique, skipped, duplicate};
+    const total = unique.reduce((s,r) => s + (r.io === "in" ? 0 : r.amt), 0);
+    $("billPreview").innerHTML = `
+      <div class="bill-stats">
+        <div><b>${unique.length}</b><span>新增</span></div>
+        <div><b>${duplicate}</b><span>重复跳过</span></div>
+        <div><b>${skipped}</b><span>退款/关闭跳过</span></div>
+      </div>
+      <div class="bill-sum">新增支出 <b>￥${fmt(total)}</b> · 导入前会自动留快照</div>
+      <div class="bill-list">${unique.slice(0,6).map(r => `
+        <div><span>${r.date.slice(5)} · ${r.note}</span><b>${r.io === "in" ? "+" : "-"}￥${fmt(r.amt)}</b></div>`).join("")}
+        ${unique.length > 6 ? `<div class="bill-more">还有 ${unique.length - 6} 笔…</div>` : ""}
+      </div>`;
+    $("billConfirm").disabled = !unique.length;
+    $("billConfirm").textContent = unique.length ? `导入 ${unique.length} 笔` : "没有新账可导入";
+    $("billSheet").style.display = "block";
+    $("billSheet").classList.add("open");
+    requestAnimationFrame(() => $("billMaskBg").classList.add("open"));
+  };
+  rd.readAsArrayBuffer(file);
+}
+function closeBillSheet(){
+  $("billSheet").style.display = "none";
+  $("billSheet").classList.remove("open");
+  $("billMaskBg").classList.remove("open");
+}
+function confirmBillImport(){
+  if(!pendingBill || !pendingBill.rows.length) return;
+  saveSnapshot();
+  const beforeIds = new Set(items.map(i => i.id));
+  const importedIds = [];
+  pendingBill.rows.forEach(row => {
+    const c = billCategory(row.note, row.io);
+    const id = "bill" + Date.now() + Math.random().toString(36).slice(2, 7);
+    items.push({
+      id, date: row.date, io: row.io, cat: c.id, catName: c.nm, em: c.em,
+      amt: row.amt, note: row.note, extId: row.extId || undefined,
+      ts: Date.now() + importedIds.length
+    });
+    importedIds.push(id);
+  });
+  try{
+    localStorage.setItem(K_IMPORT_UNDO, JSON.stringify({ids: importedIds, at: Date.now()}));
+  }catch(e){}
+  save();
+  closeBillSheet();
+  renderMonth(); renderHome(); renderSum(); renderFixed(); renderMine();
+  renderSnapshotState();
+  pendingBill = null;
+  toast(`导入 ${importedIds.length} 笔，重复的已经跳过`);
+}
+function undoBillImport(){
+  const undo = load(K_IMPORT_UNDO);
+  if(!undo || !Array.isArray(undo.ids) || !undo.ids.length){ toast("没有可撤销的账单导入"); return; }
+  if(!confirm(`撤销上次导入的 ${undo.ids.length} 笔账单吗？\n\n只删这次导入的账，不动原来的账。`)) return;
+  const ids = new Set(undo.ids);
+  items = items.filter(i => !ids.has(i.id));
+  save();
+  localStorage.removeItem(K_IMPORT_UNDO);
+  renderMonth(); renderHome(); renderSum(); renderMine();
+  toast(`已撤销 ${undo.ids.length} 笔导入`);
+}
+function aiSettings(){
+  const data = load(K_AI);
+  return data && typeof data === "object" ? data : {endpoint:"", model:"", key:"", enabled:false};
+}
+function aiSummary(){
+  const list = monthItems(viewY, viewM).filter(i => i.io !== "in");
+  const sum = list.reduce((s,i) => s + i.amt, 0);
+  const by = {};
+  list.forEach(i => { by[i.catName] = (by[i.catName] || 0) + i.amt; });
+  const top = Object.entries(by).sort((a,b) => b[1]-a[1]);
+  return {
+    month: `${viewY}-${pad(viewM+1)}`,
+    total: Number(sum.toFixed(2)),
+    count: list.length,
+    budget,
+    categories: top.map(([name, amount]) => ({name, amount:Number(amount.toFixed(2))}))
+  };
+}
+function localAiAnswer(kind){
+  const s = aiSummary();
+  if(!s.count) return "这个月还没有支出记录，先记几笔，我就能帮你看。";
+  const top = s.categories[0];
+  const second = s.categories[1];
+  if(kind === "save"){
+    return `先别急着省吃饭钱。这个月「${top.name}」最多，￥${fmt(top.amount)}。可以只做一件事：下次买之前先看常用账里的上次价格，少买一次重复的东西，就已经很实在。`;
+  }
+  if(kind === "letter"){
+    return `这个月记了 ${s.count} 笔，共 ￥${fmt(s.total)}。钱主要花在「${top.name}」。日子不是越省越好，知道钱去了哪里，就已经很踏实。`;
+  }
+  return `这个月共 ￥${fmt(s.total)}，${s.count} 笔。钱主要花在「${top.name}」￥${fmt(top.amount)}${second ? `，其次是「${second.name}」￥${fmt(second.amount)}` : ""}。`;
+}
+async function aiAnswer(question){
+  const settings = aiSettings();
+  if(!settings.enabled || !settings.endpoint || !settings.model || !settings.key){
+    return localAiAnswer(/省/.test(question) ? "save" : /总结|写/.test(question) ? "letter" : "spend");
+  }
+  const s = aiSummary();
+  const endpoint = settings.endpoint.replace(/\/$/, "");
+  const res = await fetch(endpoint + "/chat/completions", {
+    method: "POST",
+    headers: {"Content-Type":"application/json", "Authorization":"Bearer " + settings.key},
+    body: JSON.stringify({
+      model: settings.model,
+      temperature: 0.4,
+      messages: [
+        {role:"system", content:"你是温和、克制的家庭记账助手。只根据提供的汇总数字回答，不编造流水，不推销理财，用中文，120字以内。"},
+        {role:"user", content:`本月汇总：${JSON.stringify(s)}\n问题：${question}`}
+      ]
+    })
+  });
+  if(!res.ok) throw new Error("AI 接口返回 " + res.status);
+  const data = await res.json();
+  return data.choices && data.choices[0] && data.choices[0].message
+    ? data.choices[0].message.content.trim()
+    : "AI 没有返回内容，先用本地分析。";
+}
+async function runAi(question){
+  const box = $("aiResult");
+  box.classList.add("loading");
+  const settings = aiSettings();
+  box.textContent = settings.enabled && settings.key ? "正在请 AI 看汇总…" : "正在用本地账本分析…";
+  try{
+    box.textContent = await aiAnswer(question);
+  }catch(e){
+    const local = localAiAnswer(/省/.test(question) ? "save" : /总结|写/.test(question) ? "letter" : "spend");
+    box.textContent = "云端 AI 暂时没连上。先用本地分析：" + local;
+  }finally{
+    box.classList.remove("loading");
+  }
+}
+function renderAiSettings(){
+  const s = aiSettings();
+  $("aiEndpoint").value = s.endpoint || "";
+  $("aiModel").value = s.model || "";
+  $("aiKey").value = s.key || "";
+  $("aiEnabled").checked = !!s.enabled;
+  $("aiBadge").textContent = s.enabled && s.key ? "云端 AI" : "本地分析";
+}
+function saveAiSettings(){
+  const data = {
+    endpoint: $("aiEndpoint").value.trim(),
+    model: $("aiModel").value.trim(),
+    key: $("aiKey").value.trim(),
+    enabled: $("aiEnabled").checked
+  };
+  if(data.enabled && (!data.endpoint || !data.model || !data.key)){
+    toast("启用云端 AI 需要地址、模型名和 Key");
+    return;
+  }
+  try{
+    localStorage.setItem(K_AI, JSON.stringify(data));
+    renderAiSettings();
+    toast(data.enabled ? "云端 AI 设置好了" : "已切回本地分析");
+  }catch(e){ toast("保存失败，请检查浏览器存储"); }
 }
 function renderFrequent(){
   const box = $("frequentBox");
@@ -433,6 +832,7 @@ function renderSum(){
   const out = list.filter(i=>i.io!=="in");
   const sum = out.reduce((s,i)=>s+i.amt,0);
   renderBudget(sum);
+  renderWeek();
   renderCal(list);
   renderRecap(list, sum);
   renderTrend();
@@ -455,6 +855,41 @@ function renderSum(){
   $("tipBox").innerHTML = maicai > sum*0.6
     ? `<div class="tip-card"><b>💡 小提示 · 给周群</b><p>买菜吃饭占了 ${(maicai/sum*100).toFixed(0)}%，吃得健康最值。看见新鲜的该买就买，别的不用省 💙</p></div>`
     : `<div class="tip-card"><b>💡 小提示 · 给周群</b><p>「${top[0]}」花得最多，占 ${(top[1]/sum*100).toFixed(0)}%。钱花在开心的事上，就值得 💙</p></div>`;
+}
+function renderWeek(){
+  const box = $("weekBox");
+  if(!box) return;
+  const start = new Date();
+  start.setDate(start.getDate()-6);
+  const prevStart = new Date();
+  prevStart.setDate(prevStart.getDate()-13);
+  const prevEnd = new Date();
+  prevEnd.setDate(prevEnd.getDate()-7);
+  const startKey = keyForDate(start), prevStartKey = keyForDate(prevStart), prevEndKey = keyForDate(prevEnd);
+  const current = items.filter(i=>i.io!=="in" && i.date>=startKey && i.date<=todayKey());
+  const previous = items.filter(i=>i.io!=="in" && i.date>=prevStartKey && i.date<=prevEndKey);
+  if(!current.length){
+    box.innerHTML = `<div class="week-head"><div><span class="week-kicker">LAST 7 DAYS</span><b>最近 7 天，钱花在哪</b></div><span class="week-total">￥0</span></div>
+      <p>最近 7 天还没记账，记几笔就能看出变化。</p>`;
+    return;
+  }
+  const currentSum = current.reduce((s,i)=>s+i.amt,0);
+  const previousSum = previous.reduce((s,i)=>s+i.amt,0);
+  const diff = currentSum - previousSum;
+  const by = {};
+  current.forEach(i=>{ by[i.catName]=(by[i.catName]||0)+i.amt; });
+  const top = Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
+  const biggest = current.slice().sort((a,b)=>b.amt-a.amt)[0];
+  const comparison = !previous.length
+    ? `前 7 天还没有账，先把这个星期记完整。`
+    : diff > 0
+      ? `比前 7 天多花 <b>￥${fmt(diff)}</b>，主要多花在「${top[0]}」。`
+      : diff < 0
+        ? `比前 7 天少花 <b>￥${fmt(-diff)}</b>，继续保持这个节奏。`
+        : `和前 7 天花得一样多，节奏很稳。`;
+  box.innerHTML = `<div class="week-head"><div><span class="week-kicker">LAST 7 DAYS</span><b>最近 7 天，钱花在哪</b></div><span class="week-total">￥${fmt(currentSum)}</span></div>
+    <p>${comparison}</p>
+    <div class="week-tags"><span>花最多：${top[0]} ￥${fmt(top[1])}</span><span>最大一笔：${biggest.note || biggest.catName} ￥${fmt(biggest.amt)}</span></div>`;
 }
 function renderBudget(spent){
   const setBudget = () => {
@@ -528,21 +963,32 @@ function renderCal(list){
 function renderRecap(list, sum){
   const box = $("recapBox");
   if(!list.length){ box.style.display="none"; return; }
-  box.style.display="block";
   const out = list.filter(i=>i.io!=="in");
+  if(!out.length){ box.style.display="none"; return; }
+  box.style.display="block";
   const by = {};
   out.forEach(i=>{ by[i.catName]=(by[i.catName]||0)+i.amt; });
   const top = Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
   const prevD = new Date(viewY, viewM-1, 1);
-  const prev = monthItems(prevD.getFullYear(), prevD.getMonth()).filter(i=>i.io!=="in").reduce((s,i)=>s+i.amt,0);
+  const prevOut = monthItems(prevD.getFullYear(), prevD.getMonth()).filter(i=>i.io!=="in");
+  const prev = prevOut.reduce((s,i)=>s+i.amt,0);
+  const prevBy = {};
+  prevOut.forEach(i=>{ prevBy[i.catName]=(prevBy[i.catName]||0)+i.amt; });
   let cmp = "";
+  let why = "";
   if(prev>0){
     const diff = sum - prev;
     cmp = diff>=0 ? `比上个月多花 ￥${fmt(diff)}` : `比上个月省下 ￥${fmt(-diff)}`;
+    if(diff>0){
+      const changes = Object.entries(by)
+        .map(([nm,v])=>({nm, diff:v-(prevBy[nm]||0)}))
+        .sort((a,b)=>b.diff-a.diff);
+      if(changes[0] && changes[0].diff>0) why = `多出来的钱主要花在「${changes[0].nm}」，比上月多 ￥${fmt(changes[0].diff)}。`;
+    }
   }
   const nOut = out.length;
   box.innerHTML = `<h3>📋 ${viewM+1} 月账单总结</h3>
-    <p>这个月一共花了 <b>￥${fmt(sum)}</b>（${nOut} 笔），花最多的是「${top[0]}」￥${fmt(top[1])}${cmp?"，"+cmp:""}。${sum===0?"这个月还没花钱呢～":""}</p>`;
+    <p>这个月一共花了 <b>￥${fmt(sum)}</b>（${nOut} 笔），钱主要花在「${top[0]}」￥${fmt(top[1])}${cmp?"，"+cmp:""}。${why}</p>`;
 }
 function renderTrend(){
   const months = [];
@@ -646,6 +1092,23 @@ function doExport(){
   localStorage.setItem(K_BACKUP, todayKey());
   renderBackupState();
   toast("账本文件存好啦，发微信收藏里最稳");
+}
+function csvCell(value){
+  return '"' + String(value ?? "").replace(/"/g, '""') + '"';
+}
+function doExportCsv(){
+  const rows = [["日期","收支","分类","备注","金额"]];
+  items.slice().sort((a,b)=>a.date.localeCompare(b.date) || a.ts-b.ts).forEach(i=>{
+    rows.push([i.date, i.io==="in"?"收入":"支出", i.catName || "", i.note || "", i.amt]);
+  });
+  const csv = "\uFEFF" + rows.map(row=>row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `周群的账本_${todayKey()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("表格导出好啦，可用 Excel 打开");
 }
 function backupPayload(){
   return JSON.stringify({app:"zhouqun-ledger", version:3, exportedAt:todayKey(), budget, fixedList, items}, null, 2);
@@ -753,6 +1216,11 @@ function renderMine(){
     <span>记账净额 ￥${total.toFixed(0)}</span>`;
   renderBackupState();
   renderSnapshotState();
+  const undo = load(K_IMPORT_UNDO);
+  const undoBtn = $("btnUndoImport");
+  undoBtn.disabled = !(undo && Array.isArray(undo.ids) && undo.ids.length);
+  undoBtn.textContent = undoBtn.disabled ? "撤销上次账单导入" : `撤销上次账单导入（${undo.ids.length} 笔）`;
+  renderAiSettings();
 }
 
 /* ===== 视图切换 ===== */
@@ -773,9 +1241,43 @@ $("addBack").onclick = () => switchView("home");
 $("btnGotoData2").onclick = () => $("dataBox").scrollIntoView({behavior:"smooth"});
 $("btnExport").onclick = shareBackup;
 $("btnImport").onclick = () => $("importFile").click();
+$("btnCsv").onclick = doExportCsv;
+$("btnBillImport").onclick = () => $("billFile").click();
+$("btnUndoImport").onclick = undoBillImport;
 $("importFile").onchange = e => { const f = e.target.files[0]; if(f) doImport(f); e.target.value=""; };
+$("billFile").onchange = e => { const f = e.target.files[0]; if(f) prepareBillImport(f); e.target.value=""; };
 $("btnRestoreSnapshot").onclick = restoreSnapshot;
 $("kbSave").onclick = saveItem;
+$("sentenceGo").onclick = fillSentence;
+$("sentenceInput").onkeydown = e => { if(e.key==="Enter"){ e.preventDefault(); fillSentence(); } };
+$("billCancel").onclick = closeBillSheet;
+$("billCancelX").onclick = closeBillSheet;
+$("billMaskBg").onclick = closeBillSheet;
+$("billConfirm").onclick = confirmBillImport;
+document.querySelectorAll("[data-ai]").forEach(btn => {
+  btn.onclick = () => {
+    const kind = btn.dataset.ai;
+    $("aiResult").textContent = localAiAnswer(kind);
+    const question = kind === "save"
+      ? "结合本月分类，给一个最实际的省钱建议"
+      : kind === "letter"
+        ? "写一句温和的生活总结"
+        : "这个月钱主要花在哪里？";
+    runAi(question);
+  };
+});
+$("aiAskBtn").onclick = () => {
+  const q = $("aiAskInput").value.trim();
+  if(!q){ toast("先写一句想问的"); return; }
+  runAi(q);
+};
+$("aiAskInput").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); $("aiAskBtn").click(); } };
+$("aiSave").onclick = saveAiSettings;
+$("aiClear").onclick = () => {
+  localStorage.removeItem(K_AI);
+  renderAiSettings();
+  toast("云端设置和密钥已清除");
+};
 $("mPrev").onclick = ()=>{ viewM--; if(viewM<0){viewM=11;viewY--;} renderMonth(); if(curView==="sum")renderSum(); };
 $("mNext").onclick = ()=>{ viewM++; if(viewM>11){viewM=0;viewY++;} renderMonth(); if(curView==="sum")renderSum(); };
 
@@ -835,7 +1337,21 @@ checkFixed();
 remindStreak();
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").catch(()=>{});
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    if(reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+    reg.addEventListener("updatefound", () => {
+      const worker = reg.installing;
+      if(worker) worker.addEventListener("statechange", () => {
+        if(worker.state === "installed" && navigator.serviceWorker.controller) worker.postMessage("SKIP_WAITING");
+      });
+    });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(!sessionStorage.getItem("mom-sw-reloaded")){
+      sessionStorage.setItem("mom-sw-reloaded", "1");
+      location.reload();
+    }
+  });
 }
 </script>
 </body>

@@ -1,4 +1,4 @@
-const VERSION = "mom-v6-1";
+const VERSION = "mom-v8-1";
 const CORE = ["./index.html", "./theme.css", "./theme.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -30,4 +30,7 @@ self.addEventListener("fetch", e => {
       return r;
     }).catch(() => caches.match(e.request).then(hit => hit || caches.match("./index.html")))
   );
+});
+self.addEventListener("message", e => {
+  if(e.data === "SKIP_WAITING") self.skipWaiting();
 });
