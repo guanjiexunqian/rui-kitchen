@@ -22,7 +22,7 @@
   html{-webkit-text-size-adjust:100%}
   body{
     font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-    color:var(--ink);font-size:16px;line-height:1.55;
+    color:var(--ink);font-size:18px;line-height:1.55;
     background:var(--bg);min-height:100vh;padding-bottom:120px;
   }
   button{font-family:inherit}
@@ -53,37 +53,48 @@
     padding:10px 6px 12px;text-align:center;margin-top:2px}
   .mc-big b{font-size:40px;line-height:1.15;font-weight:800;display:block;color:#FFF3C4}
   .mc-big span{font-size:12.5px;color:#FFF3C4;font-weight:600}
+  /* 记账页压缩月卡，把数字键盘留在第一屏 */
+  .month-card.compact{margin-top:10px;padding:10px 14px 11px;border-radius:18px}
+  .month-card.compact .mc-top .m{font-size:15px}
+  .month-card.compact .mc-nav button{width:30px;height:30px;font-size:17px}
+  .month-card.compact .mc-grid{grid-template-columns:1fr 1fr 1.3fr;gap:5px;margin-top:7px}
+  .month-card.compact .mc-grid>div{padding:5px 4px;border-radius:11px;display:flex;flex-direction:column;justify-content:center}
+  .month-card.compact .mc-grid b{font-size:17px;line-height:1.3}
+  .month-card.compact .mc-grid span{font-size:11px;line-height:1.4}
+  .month-card.compact .mc-big{grid-column:auto;margin-top:0;background:rgba(255,243,196,.18)}
+  .month-card.compact .mc-big b{font-size:18px;color:#FFF3C4}
+  .month-card.compact .mc-big span{font-size:11px}
 
   .view{display:none}
   .view.on{display:block}
 
   /* ===== 首页 = 明细 ===== */
-  .streak{display:flex;align-items:center;gap:6px;margin:12px 18px 0;color:var(--muted);font-size:13px}
+  .streak{display:flex;align-items:center;gap:6px;margin:12px 18px 0;color:var(--muted);font-size:14px}
   .streak b{color:var(--pri)}
   .search-bar{display:flex;gap:8px;margin:12px 16px 0}
   .search-bar input{flex:1;border:2px solid var(--line);border-radius:14px;padding:11px 14px;
-    font-size:15.5px;font-family:inherit;color:var(--ink);outline:none;background:#fff}
+    font-size:17px;font-family:inherit;color:var(--ink);outline:none;background:#fff}
   .search-bar input:focus{border-color:var(--pri2)}
   .filter-row{display:flex;gap:8px;overflow-x:auto;margin:10px 16px 4px;scrollbar-width:none}
   .filter-row::-webkit-scrollbar{display:none}
   .filter-row button{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:99px;
-    padding:6px 14px;font-size:13px;color:var(--muted);cursor:pointer}
+    padding:6px 14px;font-size:14px;color:var(--muted);cursor:pointer}
   .filter-row button.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri);font-weight:700}
   .list{margin:0 16px}
-  .day-head{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:16px 4px 6px}
+  .day-head{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin:16px 4px 6px}
   .day-head b{font-weight:600}
   .item{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;
     padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
   .item .em{font-size:23px}
   .item .inf{flex:1;min-width:0}
-  .item .inf b{font-size:15.5px;font-weight:700}
-  .item .inf span{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .item .amt{font-size:16.5px;font-weight:800}
+  .item .inf b{font-size:17px;font-weight:700}
+  .item .inf span{display:block;font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .amt{font-size:18px;font-weight:800}
   .item .amt.in{color:var(--green)}
   .item .ops{display:flex;gap:2px}
   .item .ops button{border:0;background:none;font-size:15px;padding:6px 4px;cursor:pointer;opacity:.65}
   .item .ops button:active{opacity:1}
-  .empty{text-align:center;color:var(--muted);padding:46px 20px;font-size:15px;line-height:2}
+  .empty{text-align:center;color:var(--muted);padding:46px 20px;font-size:16px;line-height:2}
   .empty .big{font-size:44px;display:block;margin-bottom:4px}
 
   /* ===== 写账页 ===== */
@@ -94,12 +105,12 @@
   .cat{background:#fff;border:2px solid var(--line);border-radius:15px;padding:10px 4px 8px;
     text-align:center;cursor:pointer;position:relative}
   .cat .em{font-size:24px;display:block}
-  .cat .nm{font-size:12.5px;color:var(--muted);margin-top:2px;display:block}
+  .cat .nm{font-size:14px;color:var(--muted);margin-top:2px;display:block}
   .cat.on{border-color:var(--pri);background:var(--pri-soft)}
   .cat.on .nm{color:var(--pri);font-weight:700}
   .kb{margin:12px 16px 0;background:#fff;border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
   .kb-disp{padding:14px 16px 4px;text-align:right;display:flex;align-items:baseline;justify-content:flex-end;gap:10px;flex-wrap:wrap}
-  .kb-disp .lbl{font-size:13px;color:var(--muted)}
+  .kb-disp .lbl{font-size:14px;color:var(--muted)}
   .kb-disp .dt{font-size:12.5px;color:var(--pri);border-bottom:1px dashed var(--pri2);cursor:pointer}
   .kb-disp .dt.has{color:var(--red);font-weight:700}
   .kb-disp b{font-size:38px;font-weight:800}
@@ -110,7 +121,11 @@
   .kb-note input{border:0;outline:0;width:100%;font-size:15.5px;font-family:inherit;color:var(--ink)}
   .quick-row{display:flex;gap:8px;overflow-x:auto;margin:10px 16px 0;padding-bottom:2px;scrollbar-width:none}
   .quick-row::-webkit-scrollbar{display:none}
-  .quick-row button{flex:none;background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font-size:14px;cursor:pointer;color:var(--ink)}
+  .quick-row button{flex:none;background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font-size:15px;cursor:pointer;color:var(--ink)}
+  .price-hint{display:none;margin:8px 16px -2px;background:#FFF9DB;border:1.5px solid #FCE96A;border-radius:11px;
+    padding:6px 12px;font-size:13.5px;color:#5C4A03;line-height:1.5;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+  .price-hint::-webkit-scrollbar{display:none}
+  .price-hint.show{display:block}
   .quick-row button:active{background:var(--pri-soft)}
   .save-big{display:block;margin:14px 16px;width:calc(100% - 32px);border:0;border-radius:18px;
     background:linear-gradient(135deg,#1971C2,#3B96E8);color:#fff;font-size:18px;font-weight:800;
@@ -128,14 +143,14 @@
   .budget-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#69DB7C,#1F9D55);transition:width .4s}
   .budget-bar i.warn{background:linear-gradient(90deg,#FFD43B,#F5A623)}
   .budget-bar i.over{background:linear-gradient(90deg,#FF8787,#E5484D)}
-  .budget-sub{font-size:13px;color:var(--muted);margin-top:7px}
+  .budget-sub{font-size:14.5px;color:var(--muted);margin-top:7px}
   .budget-sub b.over{color:var(--red)}
   .bars{margin:0 16px 12px;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow)}
   .bars h3{font-size:16px;margin-bottom:12px}
   .bar-row{margin-bottom:13px}
   .bar-row:last-child{margin-bottom:2px}
-  .bar-top{display:flex;justify-content:space-between;font-size:14.5px;margin-bottom:5px}
-  .bar-top b{font-size:14.5px}
+  .bar-top{display:flex;justify-content:space-between;font-size:15.5px;margin-bottom:5px}
+  .bar-top b{font-size:15.5px}
   .bar-bg{height:12px;background:var(--pri-soft);border-radius:99px;overflow:hidden}
   .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#4DABF7,#1971C2)}
   .trend{margin:0 16px 12px;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow)}
@@ -155,7 +170,27 @@
   .tip-card{margin:0 16px 14px;border-radius:18px;padding:15px 16px;
     background:linear-gradient(135deg,#FFF9DB,#FFF3BF);border:2px solid #FCE96A}
   .tip-card b{font-size:15px}
-  .tip-card p{font-size:13.5px;margin-top:3px;color:#5C4A03}
+  .tip-card p{font-size:14.5px;margin-top:3px;color:#5C4A03}
+  .cal-card{margin:0 16px 12px;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+  .cal-card h3{font-size:16px;margin-bottom:10px}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);font-size:12.5px;color:var(--muted);text-align:center;margin-bottom:4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .cal-cell{border:0;background:none;border-radius:10px;padding:4px 1px 5px;text-align:center;min-height:44px;cursor:pointer;font-family:inherit}
+  .cal-cell.blank{min-height:0;cursor:default}
+  .cal-cell .d{font-size:13.5px;font-weight:600;display:block;line-height:1.5}
+  .cal-cell .amt{display:block;font-size:9.5px;font-weight:700;color:var(--pri);line-height:1.3}
+  .cal-cell.has{background:var(--pri-soft)}
+  .cal-cell.over{background:#FFE3E3}
+  .cal-cell.over .amt{color:var(--red)}
+  .cal-cell.today .d{color:#fff;background:var(--pri);border-radius:99px;width:23px;margin:0 auto}
+  .cal-cell.sel{outline:2.5px solid var(--pri)}
+  .cal-detail{margin-top:10px;border-top:1.5px dashed var(--line);padding-top:8px}
+  .cal-detail .cd-row{display:flex;gap:8px;font-size:14px;padding:4px 2px;align-items:center}
+  .cal-detail .cd-row b{margin-left:auto;white-space:nowrap}
+  .cal-hint{font-size:13px;color:var(--muted);margin-top:8px}
+  .recap-card{margin:0 16px 12px;background:linear-gradient(135deg,#E7F5FF,#D0EBFF);border:2px solid #A5D8FF;border-radius:20px;padding:16px}
+  .recap-card h3{font-size:16px;color:#1864AB}
+  .recap-card p{font-size:14.5px;color:#234C6B;margin-top:5px;line-height:1.7}
 
   /* ===== 我的页 ===== */
   .mine-card{margin:12px 16px 0;background:linear-gradient(135deg,#3B96E8,#1971C2);border-radius:20px;
@@ -168,7 +203,7 @@
     font-size:15px;font-weight:700;padding:12px 0;cursor:pointer}
   .fixed-card{margin:12px 16px 0;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow)}
   .fixed-card h3{font-size:16px;margin-bottom:4px}
-  .fixed-card .hint{font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.7}
+  .fixed-card .hint{font-size:13.5px;color:var(--muted);margin-bottom:10px;line-height:1.7}
   .fx-row{display:flex;align-items:center;gap:10px;background:var(--pri-soft);border-radius:14px;
     padding:11px 13px;margin-bottom:8px}
   .fx-row .em{font-size:22px}
@@ -182,7 +217,7 @@
   .fx-add button{border:0;background:var(--pri);color:#fff;border-radius:12px;padding:0 18px;font-weight:700;font-size:15px;cursor:pointer}
   .data-card{margin:12px 16px 20px;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow)}
   .data-card h3{font-size:16px;margin-bottom:4px}
-  .data-card .hint{font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+  .data-card .hint{font-size:13.5px;color:var(--muted);margin-bottom:12px;line-height:1.7}
   .data-btns{display:flex;gap:10px}
   .data-btns button{flex:1;border:0;border-radius:14px;padding:12px 0;font-size:15px;font-weight:700;cursor:pointer}
   .data-btns .exp{background:var(--pri);color:#fff}
@@ -193,7 +228,7 @@
     background:#fff;border-top:1.5px solid var(--line);
     padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
   .dock button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;
-    font-size:11.5px;color:var(--muted);cursor:pointer}
+    font-size:12.5px;color:var(--muted);cursor:pointer}
   .dock button .ic{font-size:23px}
   .dock button.on{color:var(--pri);font-weight:700}
   .dock .add-btn{flex:1.1;background:linear-gradient(135deg,#1971C2,#3B96E8);border-radius:16px;color:#fff;
@@ -232,7 +267,7 @@
   </div>
 </div>
 
-<div class="month-card">
+<div class="month-card" id="monthCard">
   <div class="mc-top">
     <span class="m" id="mTitle"></span>
     <div class="mc-nav">
@@ -265,6 +300,7 @@
     <button data-io="in">💰 收入</button>
   </div>
   <div class="grid" id="catGrid"></div>
+  <div class="price-hint" id="priceHint"></div>
   <div class="quick-row" id="quickRow"></div>
   <div class="kb">
     <div class="kb-disp">
@@ -281,9 +317,11 @@
 <div class="view" id="v-sum">
   <div class="sum-wrap">
     <div class="budget-card" id="budgetBox"></div>
+    <div class="cal-card" id="calBox"></div>
     <div class="bars" id="barBox"></div>
     <div class="trend" id="trendBox"></div>
     <div class="year-card" id="yearBox"></div>
+    <div class="recap-card" id="recapBox"></div>
     <div id="tipBox"></div>
   </div>
 </div>
@@ -373,6 +411,7 @@ function renderCats(){
   $("catGrid").querySelectorAll("button").forEach(b => b.onclick = () => {
     cat = pool.find(x=>x.id===b.dataset.c);
     renderCats(); renderQuick();
+    renderPriceHint();
   });
   $("kbCatName").textContent = cat.nm;
 }
@@ -381,6 +420,21 @@ function renderQuick(){
   const cc = pool.find(x=>x.id===cat.id) || cat;
   $("quickRow").innerHTML = (cc.quick||[]).map(q => `<button data-q="${q}">${q}</button>`).join("");
   $("quickRow").querySelectorAll("button").forEach(b => b.onclick = () => { $("kbNote").value = b.dataset.q; });
+}
+function renderPriceHint(){
+  const el = $("priceHint");
+  if(io!=="out" || cat.id!=="maicai" || !items.length){ el.className="price-hint"; return; }
+  const hist = {};
+  items.filter(i=>i.cat==="maicai" && i.note).forEach(i=>{
+    const k = i.note.trim();
+    if(!k) return;
+    const h = hist[k];
+    if(!h || i.date>h.date || (i.date===h.date && i.ts>=h.ts)) hist[k] = i;
+  });
+  const rows = Object.values(hist).sort((a,b)=>b.date.localeCompare(a.date) || b.ts-a.ts).slice(0,2);
+  if(!rows.length){ el.className="price-hint"; return; }
+  el.innerHTML = "🏷️ 上次买：<b>" + rows.map(r=>`${r.note} ￥${r.amt%1?r.amt.toFixed(2):r.amt}`).join("、") + "</b>";
+  el.className = "price-hint show";
 }
 function renderKeys(){
   const keys = ["1","2","3","4","5","6","7","8","9",".","0","⌫"];
@@ -419,6 +473,7 @@ function saveItem(){
   save();
   buf="0"; $("kbDisp").textContent="￥0.00"; $("kbNote").value=""; altDate=""; renderDateLabel();
   renderMonth(); renderHome(); renderSum();
+  renderPriceHint();
   checkFixed();
   toast(`记好啦：${cat.nm} ${io==="out"?"￥":"收 ￥"}${amt.toFixed(2)}`);
 }
@@ -432,6 +487,7 @@ function editItem(id){
   $("kbNote").value = it.note || "";
   altDate = it.date;
   renderCats(); renderQuick(); renderDateLabel();
+  renderPriceHint();
   items = items.filter(x=>x.id!==id); save();
   switchView("add");
   renderMonth(); renderHome(); renderSum();
@@ -495,11 +551,14 @@ function renderHome(){
 
 /* ===== 汇总 ===== */
 const BAR_COLORS = ["#1971C2","#4DABF7","#1F9D55","#F5A623","#E8590C","#AE3EC9","#E5484D","#868E96"];
+let selDay = "";
 function renderSum(){
   const list = monthItems(viewY,viewM);
   const out = list.filter(i=>i.io!=="in");
   const sum = out.reduce((s,i)=>s+i.amt,0);
   renderBudget(sum);
+  renderCal(list);
+  renderRecap(list, sum);
   renderTrend();
   renderYear();
   const by = {};
@@ -518,8 +577,8 @@ function renderSum(){
   const maicai = (by["买菜"]||0) + (by["吃饭"]||0);
   const top = rows[0];
   $("tipBox").innerHTML = maicai > sum*0.6
-    ? `<div class="tip-card"><b>💡 小提示</b><p>这个月买菜吃饭占了 ${(maicai/sum*100).toFixed(0)}%，是大头～看见好 deal 该囤就囤，别的不用省</p></div>`
-    : `<div class="tip-card"><b>💡 小提示</b><p>这个月花最多的是「${top[0]}」，一共 ￥${fmt(top[1])}。钱要花在开心的事上 💙</p></div>`;
+    ? `<div class="tip-card"><b>💡 小提示 · 给周群</b><p>买菜吃饭占了 ${(maicai/sum*100).toFixed(0)}%，吃得健康最值。看见新鲜的该买就买，别的不用省 💙</p></div>`
+    : `<div class="tip-card"><b>💡 小提示 · 给周群</b><p>「${top[0]}」花得最多，占 ${(top[1]/sum*100).toFixed(0)}%。钱花在开心的事上，就值得 💙</p></div>`;
 }
 function renderBudget(spent){
   const setBudget = () => {
@@ -543,6 +602,64 @@ function renderBudget(spent){
       ? `这个月已经花了 <b class="over">￥${(spent-budget).toFixed(0)}</b> 超出预算，下个月悠着点～`
       : `还剩 <b>￥${left.toFixed(0)}</b> 可以花 · 已用 ${pct.toFixed(0)}%`}</div>`;
   $("setBudget").onclick = setBudget;
+}
+function renderCal(list){
+  const y = viewY, m = viewM;
+  const first = new Date(y, m, 1);
+  const days = new Date(y, m+1, 0).getDate();
+  const lead = first.getDay();
+  const byDay = {};
+  list.filter(i=>i.io!=="in").forEach(i=>{ byDay[i.date]=(byDay[i.date]||0)+i.amt; });
+  const monthSum = Object.values(byDay).reduce((s,v)=>s+v,0);
+  const dailyAvg = budget>0 ? budget/days : (monthSum>0 ? monthSum/days : 0);
+  let cells = "";
+  for(let i=0;i<lead;i++) cells += `<span class="cal-cell blank"></span>`;
+  for(let d=1;d<=days;d++){
+    const key = `${y}-${pad(m+1)}-${pad(d)}`;
+    const amt = byDay[key];
+    const cls = ["cal-cell"];
+    if(amt){ cls.push("has"); if(dailyAvg && amt>dailyAvg*1.5) cls.push("over"); }
+    if(key===todayKey()) cls.push("today");
+    if(key===selDay) cls.push("sel");
+    cells += `<button class="${cls.join(" ")}" data-day="${key}">
+      <span class="d">${d}</span>${amt?`<span class="amt">${amt>=100?Math.round(amt):amt.toFixed(amt%1?1:0)}</span>`:""}</button>`;
+  }
+  let detail = "";
+  if(selDay && selDay.startsWith(`${y}-${pad(m+1)}`)){
+    const ds = list.filter(i=>i.date===selDay).sort((a,b)=>a.ts-b.ts);
+    if(ds.length){
+      const wd = new Date(selDay+"T00:00:00").toLocaleDateString("zh-CN",{weekday:"long"});
+      detail = `<div class="cal-detail"><b style="font-size:14.5px">${selDay.slice(5).replace("-","月")}日 ${wd}</b>` +
+        ds.map(i=>`<div class="cd-row"><span>${i.em}</span><span>${i.catName}${i.note?" · "+i.note:""}</span><b>${i.io==="in"?"+":"-"}￥${fmt(i.amt)}</b></div>`).join("") + `</div>`;
+    }
+  }
+  $("calBox").innerHTML = `<h3>📅 ${m+1} 月每天花多少</h3>
+    <div class="cal-week">${["日","一","二","三","四","五","六"].map(w=>`<span>${w}</span>`).join("")}</div>
+    <div class="cal-grid">${cells}</div>
+    ${detail || `<div class="cal-hint">点任意一天，看那天买了啥</div>`}`;
+  $("calBox").querySelectorAll("[data-day]").forEach(b => b.onclick = () => {
+    selDay = (selDay===b.dataset.day) ? "" : b.dataset.day;
+    renderCal(monthItems(viewY,viewM));
+  });
+}
+function renderRecap(list, sum){
+  const box = $("recapBox");
+  if(!list.length){ box.style.display="none"; return; }
+  box.style.display="block";
+  const out = list.filter(i=>i.io!=="in");
+  const by = {};
+  out.forEach(i=>{ by[i.catName]=(by[i.catName]||0)+i.amt; });
+  const top = Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
+  const prevD = new Date(viewY, viewM-1, 1);
+  const prev = monthItems(prevD.getFullYear(), prevD.getMonth()).filter(i=>i.io!=="in").reduce((s,i)=>s+i.amt,0);
+  let cmp = "";
+  if(prev>0){
+    const diff = sum - prev;
+    cmp = diff>=0 ? `比上个月多花 ￥${fmt(diff)}` : `比上个月省下 ￥${fmt(-diff)}`;
+  }
+  const nOut = out.length;
+  box.innerHTML = `<h3>📋 ${viewM+1} 月账单总结</h3>
+    <p>这个月一共花了 <b>￥${fmt(sum)}</b>（${nOut} 笔），花最多的是「${top[0]}」￥${fmt(top[1])}${cmp?"，"+cmp:""}。${sum===0?"这个月还没花钱呢～":""}</p>`;
 }
 function renderTrend(){
   const months = [];
@@ -568,6 +685,19 @@ function renderYear(){
     <div class="year-row"><span class="yl">${d.y}</span>
     <span class="yb"><i style="width:${Math.max(d.sum/max*100,2)}%"></i></span>
     <span class="yv">￥${d.sum.toFixed(0)}</span></div>`).join("")}`;
+}
+
+/* ===== 漏记提醒 ===== */
+function remindStreak(){
+  if(!items.length) return;
+  const days = new Set(items.map(i=>i.date));
+  if(days.has(todayKey())) return;
+  const d = new Date(); d.setDate(d.getDate()-1);
+  if(days.has(d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()))) return;
+  const k = "mom-reminded-" + todayKey();
+  if(localStorage.getItem(k)) return;
+  try{ localStorage.setItem(k, "1"); }catch(e){}
+  setTimeout(()=>toast("💙 昨天前天都没记账，今天花了记得补一笔～"), 1200);
 }
 
 /* ===== 周期账 ===== */
@@ -662,6 +792,7 @@ function renderMine(){
 /* ===== 视图切换 ===== */
 function switchView(v){
   curView = v;
+  $("monthCard").classList.toggle("compact", v==="add");
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   $("v-"+v).classList.add("on");
   document.querySelectorAll(".dock button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
@@ -703,6 +834,7 @@ $("segInOut").querySelectorAll("button").forEach(b => b.onclick = () => {
   b.classList.add("on");
   cat = (io==="out" ? CATS : IN_CATS)[0];
   renderCats(); renderQuick();
+  renderPriceHint();
 });
 
 /* 搜索（静态绑定，输入不丢焦点） */
@@ -710,8 +842,11 @@ $("kwInput").oninput = e => { keyword = e.target.value.trim().toLowerCase(); ren
 
 const d0 = new Date();
 viewY = d0.getFullYear(); viewM = d0.getMonth();
+$("monthCard").classList.add("compact");
 renderCats(); renderQuick(); renderKeys(); renderMonth(); renderHome(); renderSum();
+renderPriceHint();
 checkFixed();
+remindStreak();
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
