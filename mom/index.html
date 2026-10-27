@@ -1337,6 +1337,7 @@ checkFixed();
 remindStreak();
 
 if("serviceWorker" in navigator){
+  const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js").then(reg => {
     if(reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
     reg.addEventListener("updatefound", () => {
@@ -1347,7 +1348,7 @@ if("serviceWorker" in navigator){
     });
   }).catch(()=>{});
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if(!sessionStorage.getItem("mom-sw-reloaded")){
+    if(hadController && !sessionStorage.getItem("mom-sw-reloaded")){
       sessionStorage.setItem("mom-sw-reloaded", "1");
       location.reload();
     }
