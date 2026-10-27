@@ -49,6 +49,16 @@
 <div class="view" id="v-home">
   <div class="today-card" id="todayCard"></div>
   <div class="streak" id="streakBox"></div>
+  <div class="day-jump" id="dayJump">
+    <div class="dj-copy">
+      <span class="dj-kicker">DAY LOOKUP</span>
+      <b id="monthDayCount">本月有账 0 天</b>
+    </div>
+    <div class="dj-actions">
+      <input type="date" id="jumpDate" aria-label="选择要查看的日期">
+      <button id="jumpToday" type="button">今天</button>
+    </div>
+  </div>
   <div class="search-bar"><input id="kwInput" placeholder="找一笔账，比如：猪肉"></div>
   <div class="filter-row" id="filterRow"></div>
   <div class="section-label"><span>最近记录</span><span id="recordCount"></span></div>
@@ -74,6 +84,7 @@
   <div class="grid" id="catGrid"></div>
   <div class="price-hint" id="priceHint"></div>
   <div class="quick-row" id="quickRow"></div>
+  <div class="frequent" id="frequentBox"></div>
   <div class="kb">
     <div class="kb-disp">
       <span class="lbl" id="kbCatName">买菜</span>
@@ -118,10 +129,12 @@
     <h3>账本备份</h3>
     <p class="hint">账目都存在这台手机里。把账本文件发到微信收藏，换手机或清缓存后还能找回来。</p>
     <div class="backup-state" id="backupState">还没有备份过</div>
+    <div class="snapshot-state" id="snapshotState">导入前会自动留一份快照</div>
     <div class="data-btns">
-      <button class="exp" id="btnExport">导出账本</button>
+      <button class="exp" id="btnExport">分享备份</button>
       <button class="imp" id="btnImport">导入恢复</button>
     </div>
+    <button class="snap" id="btnRestoreSnapshot" type="button" disabled>恢复最近自动快照</button>
     <input type="file" id="importFile" accept=".json,application/json" style="display:none">
   </div>
 </div>
@@ -169,6 +182,7 @@ const K = "mom-ledger-zhouqun";
 const K_BUDGET = "mom-budget-zhouqun";
 const K_FIXED = "mom-fixed-zhouqun";
 const K_BACKUP = "mom-last-backup-zhouqun";
+const K_SNAPSHOT = "mom-auto-snapshot-zhouqun";
 const load = k => { try{ return JSON.parse(localStorage.getItem(k)) ?? null; }catch(e){ return null; } };
 let items = load(K) || [];
 let budget = load(K_BUDGET) || 0;
@@ -227,6 +241,43 @@ function renderQuick(){
   const cc = pool.find(x=>x.id===cat.id) || cat;
   $("quickRow").innerHTML = (cc.quick||[]).map(q => `<button data-q="${q}">${q}</button>`).join("");
   $("quickRow").querySelectorAll("button").forEach(b => b.onclick = () => { $("kbNote").value = b.dataset.q; });
+  renderFrequent();
+}
+function renderFrequent(){
+  const box = $("frequentBox");
+  if(io!=="out" || !items.length){ box.className="frequent"; box.innerHTML=""; return; }
+  const grouped = {};
+  items.filter(i=>i.io==="out" && i.note).forEach(i=>{
+    const key = i.cat + "|" + i.note.trim();
+    const row = grouped[key];
+    if(!row) grouped[key] = {cat:i.cat, note:i.note.trim(), amt:i.amt, count:1, ts:i.ts};
+    else {
+      row.count++;
+      if(i.ts>row.ts){ row.amt=i.amt; row.ts=i.ts; }
+    }
+  });
+  const rows = Object.values(grouped)
+    .filter(x=>x.count>=2)
+    .sort((a,b)=>b.count-a.count)
+    .slice(0,3);
+  if(!rows.length){ box.className="frequent"; box.innerHTML=""; return; }
+  box.className = "frequent show";
+  box.innerHTML = `<div class="fq-head"><b>常记的，点一下就带入</b><span>不会自动保存</span></div>
+    <div class="fq-row">${rows.map((r,i)=>{
+      const c = CATS.find(x=>x.id===r.cat) || CATS[0];
+      return `<button data-fq="${i}"><b>${c.em} ${r.note}</b><span>上次 ￥${fmt(r.amt)} · 记过 ${r.count} 次</span></button>`;
+    }).join("")}</div>`;
+  box.querySelectorAll("[data-fq]").forEach(b => b.onclick = () => {
+    const r = rows[+b.dataset.fq];
+    const c = CATS.find(x=>x.id===r.cat) || CATS[0];
+    cat = c; io = "out"; buf = String(r.amt);
+    $("segInOut").querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.io==="out"));
+    $("kbDisp").textContent = "￥"+Number(r.amt).toFixed(2);
+    $("kbNote").value = r.note;
+    renderCats(); renderQuick(); renderPriceHint();
+    $("kbNote").focus();
+    toast("已带入，确认金额后再保存");
+  });
 }
 function renderPriceHint(){
   const el = $("priceHint");
@@ -248,10 +299,9 @@ function renderKeys(){
   $("kbKeys").innerHTML = keys.map(k =>
     k==="⌫" ? `<button data-k="del">⌫</button>`
     : k==="." ? `<button data-k=".">.</button>`
-    : `<button data-k="${k}">${k}</button>`).join("")
-    + `<button class="go" data-k="go" style="grid-column:span 3">✔ 存一笔</button>`;
+    : `<button data-k="${k}">${k}</button>`).join("");
   $("kbKeys").querySelectorAll("button").forEach(b => b.onclick = () => {
-    if(b.dataset.k==="go") saveItem(); else press(b.dataset.k);
+    press(b.dataset.k);
   });
 }
 function press(k){
@@ -275,6 +325,11 @@ function saveItem(){
   const amt = parseFloat(buf);
   if(!amt){ toast("先输个金额～"); return; }
   const useDate = altDate || todayKey();
+  const recentSame = items.filter(i=>i.io==="out" && i.cat===cat.id && i.date>=snapshotDay(-90));
+  const avgSame = recentSame.length>=3
+    ? recentSame.reduce((s,i)=>s+i.amt,0)/recentSame.length
+    : 0;
+  const unusual = avgSame>0 && amt>avgSame*2;
   items.push({ id:"i"+Date.now(), date:useDate, io, cat:cat.id, catName:cat.nm, em:cat.em,
     amt:Math.round(amt*100)/100, note:$("kbNote").value.trim(), ts:Date.now() });
   save();
@@ -282,8 +337,15 @@ function saveItem(){
   renderMonth(); renderHome(); renderSum();
   renderPriceHint();
   checkFixed();
-  toast(`记好啦：${cat.nm} ${io==="out"?"￥":"收 ￥"}${amt.toFixed(2)}`);
+  toast(unusual
+    ? "这笔比平时高一些，已记下，确认一下就好"
+    : `记好啦：${cat.nm} ${io==="out"?"￥":"收 ￥"}${amt.toFixed(2)}`);
   switchView("home");
+}
+function snapshotDay(offset){
+  const d = new Date();
+  d.setDate(d.getDate()+offset);
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 }
 function editItem(id){
   const it = items.find(x=>x.id===id);
@@ -326,6 +388,9 @@ function renderHome(){
   renderTodayCard();
   const n = calcStreak();
   $("streakBox").innerHTML = items.length ? `🔥 已连续记 <b>${n}</b> 天账 · 共 ${items.length} 笔` : "";
+  const monthPrefix = `${viewY}-${pad(viewM+1)}`;
+  const monthDays = new Set(items.filter(i=>i.date.startsWith(monthPrefix)).map(i=>i.date)).size;
+  $("monthDayCount").textContent = `本月有账 ${monthDays} 天`;
   const catsUsed = [...new Set(items.map(i=>i.catName))];
   const filters = ["全部", ...catsUsed];
   $("filterRow").innerHTML = filters.map(f=>`<button data-f="${f}" class="${f===filterCat?"on":""}">${f}</button>`).join("");
@@ -343,7 +408,7 @@ function renderHome(){
       lastDay = i.date;
       const wd = new Date(i.date+"T00:00:00").toLocaleDateString("zh-CN",{weekday:"long"});
       const ds = list.filter(x=>x.date===i.date).reduce((s,x)=>s+x.amt,0);
-      html += `<div class="day-head"><span>${i.date} ${wd}</span><b>当天 ￥${fmt(ds)}</b></div>`;
+      html += `<div class="day-head" data-day-head="${i.date}"><span>${i.date} ${wd}</span><b>当天 ￥${fmt(ds)}</b></div>`;
     }
     const isIn = i.io==="in";
     html += `<div class="item"><span class="em">${i.em}</span>
@@ -406,12 +471,19 @@ function renderBudget(spent){
   const pct = Math.min(100, spent/budget*100);
   const cls = spent>budget ? "over" : pct>=80 ? "warn" : "";
   const left = budget - spent;
+  const isCurrentMonth = viewY===new Date().getFullYear() && viewM===new Date().getMonth();
+  const daysLeft = new Date(viewY, viewM+1, 0).getDate() - new Date().getDate() + 1;
+  const safeDaily = Math.max(0, Math.floor(left / Math.max(daysLeft, 1)));
   $("budgetBox").innerHTML = `
     <div class="budget-top"><b>🎯 这个月预算 ￥${budget}</b><button class="set" id="setBudget">改</button></div>
     <div class="budget-bar"><i class="${cls}" style="width:${Math.max(pct,2)}%"></i></div>
     <div class="budget-sub">${spent>budget
       ? `这个月已经花了 <b class="over">￥${(spent-budget).toFixed(0)}</b> 超出预算，下个月悠着点～`
-      : `还剩 <b>￥${left.toFixed(0)}</b> 可以花 · 已用 ${pct.toFixed(0)}%`}</div>`;
+      : `还剩 <b>￥${left.toFixed(0)}</b> 可以花 · 已用 ${pct.toFixed(0)}%`}</div>
+    ${isCurrentMonth ? `<div class="safe-spend ${left<0?"over":""}">
+      <span>${left<0 ? "已经超出预算，接下来轻松一点就好" : `按剩余 <b>${daysLeft}</b> 天算，今天安心花`}</span>
+      <b>${left<0 ? "歇一歇" : "￥"+safeDaily.toLocaleString("zh-CN")}</b>
+    </div>` : ""}`;
   $("setBudget").onclick = setBudget;
 }
 function renderCal(list){
@@ -575,6 +647,35 @@ function doExport(){
   renderBackupState();
   toast("账本文件存好啦，发微信收藏里最稳");
 }
+function backupPayload(){
+  return JSON.stringify({app:"zhouqun-ledger", version:3, exportedAt:todayKey(), budget, fixedList, items}, null, 2);
+}
+function saveSnapshot(){
+  try{
+    localStorage.setItem(K_SNAPSHOT, JSON.stringify({
+      savedAt: todayKey(),
+      savedTs: Date.now(),
+      payload: backupPayload()
+    }));
+    renderSnapshotState();
+  }catch(e){}
+}
+async function shareBackup(){
+  const blob = new Blob([backupPayload()], {type:"application/json"});
+  const file = new File([blob], `周群的账本_${todayKey()}.json`, {type:"application/json"});
+  try{
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:"周群的账本备份", text:"周群账本的备份文件"});
+      localStorage.setItem(K_BACKUP, todayKey());
+      renderBackupState();
+      toast("备份已分享，收好就很安心");
+      return;
+    }
+  }catch(e){
+    if(e && e.name==="AbortError") return;
+  }
+  doExport();
+}
 function renderBackupState(){
   const el = $("backupState");
   if(!el) return;
@@ -588,6 +689,25 @@ function renderBackupState(){
   el.textContent = days === 0 ? `上次备份：今天 · 很安心` : `上次备份：${last.slice(5).replace("-","月")}日 · ${days} 天前`;
   el.style.color = "var(--green)";
 }
+function renderSnapshotState(){
+  const el = $("snapshotState"), btn = $("btnRestoreSnapshot");
+  if(!el || !btn) return;
+  const raw = localStorage.getItem(K_SNAPSHOT);
+  if(!raw){
+    el.textContent = "导入前会自动留一份快照";
+    btn.disabled = true;
+    return;
+  }
+  try{
+    const snap = JSON.parse(raw);
+    const count = JSON.parse(snap.payload).items.length;
+    el.textContent = `自动快照：${snap.savedAt.slice(5).replace("-","月")}日 · ${count} 笔`;
+    btn.disabled = false;
+  }catch(e){
+    el.textContent = "导入前会自动留一份快照";
+    btn.disabled = true;
+  }
+}
 function doImport(file){
   const rd = new FileReader();
   rd.onload = () => {
@@ -595,17 +715,35 @@ function doImport(file){
       const data = JSON.parse(rd.result);
       if(!data.items || !Array.isArray(data.items)) throw 0;
       if(confirm(`这个备份里有 ${data.items.length} 笔账。\n\n点「确定」合并进现在的账本（重复的会跳过），点「取消」不导入。`)){
+        saveSnapshot();
         const ids = new Set(items.map(i=>i.id));
         let added = 0;
         data.items.forEach(i=>{ if(!ids.has(i.id)){ items.push(i); added++; } });
         if(data.budget){ budget = data.budget; localStorage.setItem(K_BUDGET, JSON.stringify(budget)); }
         if(data.fixedList){ fixedList = data.fixedList; saveFixed(); }
         save(); renderMonth(); renderHome(); renderSum(); renderFixed(); renderMine();
+        renderSnapshotState();
         toast(`找回来 ${added} 笔账 💙`);
       }
     }catch(e){ toast("这个文件读不出来，确认是导出的账本文件～"); }
   };
   rd.readAsText(file);
+}
+function restoreSnapshot(){
+  const raw = localStorage.getItem(K_SNAPSHOT);
+  if(!raw){ toast("还没有可恢复的快照"); return; }
+  try{
+    const snap = JSON.parse(raw);
+    const data = JSON.parse(snap.payload);
+    if(!data.items || !Array.isArray(data.items)) throw 0;
+    if(!confirm(`恢复到 ${snap.savedAt} 自动留下的快照吗？\n\n现在的账本会先被替换，请确认。`)) return;
+    items = data.items;
+    budget = data.budget || 0;
+    fixedList = data.fixedList || fixedList;
+    save(); saveFixed(); localStorage.setItem(K_BUDGET, JSON.stringify(budget));
+    renderMonth(); renderHome(); renderSum(); renderFixed(); renderMine(); renderSnapshotState();
+    toast("已恢复到最近的自动快照");
+  }catch(e){ toast("快照读不出来，先别清理浏览器数据"); }
 }
 function renderMine(){
   const total = items.reduce((s,i)=> s + (i.io==="in"?-i.amt:i.amt), 0);
@@ -614,6 +752,7 @@ function renderMine(){
     <span>从 ${items.length ? items.map(i=>i.date).sort()[0] : todayKey()} 开始</span>
     <span>记账净额 ￥${total.toFixed(0)}</span>`;
   renderBackupState();
+  renderSnapshotState();
 }
 
 /* ===== 视图切换 ===== */
@@ -632,9 +771,10 @@ document.querySelectorAll(".dock button").forEach(b => b.onclick = () => switchV
 $("btnGotoData").onclick = () => { switchView("mine"); setTimeout(()=>$("dataBox").scrollIntoView({behavior:"smooth"}), 60); };
 $("addBack").onclick = () => switchView("home");
 $("btnGotoData2").onclick = () => $("dataBox").scrollIntoView({behavior:"smooth"});
-$("btnExport").onclick = doExport;
+$("btnExport").onclick = shareBackup;
 $("btnImport").onclick = () => $("importFile").click();
 $("importFile").onchange = e => { const f = e.target.files[0]; if(f) doImport(f); e.target.value=""; };
+$("btnRestoreSnapshot").onclick = restoreSnapshot;
 $("kbSave").onclick = saveItem;
 $("mPrev").onclick = ()=>{ viewM--; if(viewM<0){viewM=11;viewY--;} renderMonth(); if(curView==="sum")renderSum(); };
 $("mNext").onclick = ()=>{ viewM++; if(viewM>11){viewM=0;viewY++;} renderMonth(); if(curView==="sum")renderSum(); };
@@ -667,6 +807,24 @@ $("segInOut").querySelectorAll("button").forEach(b => b.onclick = () => {
 
 /* 搜索（静态绑定，输入不丢焦点） */
 $("kwInput").oninput = e => { keyword = e.target.value.trim().toLowerCase(); renderHome(); };
+$("jumpToday").onclick = () => jumpToDay(todayKey());
+$("jumpDate").onchange = e => { if(e.target.value) jumpToDay(e.target.value); };
+function jumpToDay(date){
+  keyword = ""; filterCat = "全部";
+  $("kwInput").value = "";
+  renderHome();
+  const head = document.querySelector(`[data-day-head="${date}"]`);
+  if(head){
+    head.scrollIntoView({behavior:"smooth", block:"start"});
+    head.classList.add("jump-hit");
+    setTimeout(()=>head.classList.remove("jump-hit"), 1200);
+    return;
+  }
+  const d = new Date(date+"T00:00:00");
+  viewY = d.getFullYear(); viewM = d.getMonth();
+  renderMonth(); renderHome();
+  toast(`${date.slice(5).replace("-","月")}日还没有账`);
+}
 
 const d0 = new Date();
 viewY = d0.getFullYear(); viewM = d0.getMonth();

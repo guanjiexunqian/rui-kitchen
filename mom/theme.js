@@ -1,5 +1,5 @@
 (() => {
-  const markReady = () => document.documentElement.classList.add("v5-ready");
+  const markReady = () => document.documentElement.classList.add("v6-ready");
 
   const finish = () => {
     const backupState = document.getElementById("backupState");
