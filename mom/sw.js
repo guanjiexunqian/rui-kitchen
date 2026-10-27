@@ -1,5 +1,5 @@
-const VERSION = "mom-v4";
-const CORE = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const VERSION = "mom-v5";
+const CORE = ["./index.html", "./theme.css", "./theme.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
